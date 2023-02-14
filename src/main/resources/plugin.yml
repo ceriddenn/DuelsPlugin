@@ -1,0 +1,7 @@
+name: Duels
+version: '${project.version}'
+main: me.ceridev.duels.instance.DuelPlugin
+commands:
+  join:
+  jq:
+  settings:
