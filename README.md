@@ -33,6 +33,9 @@ This plugin also features multiple intelligent systems which include...
  
  ![image](https://user-images.githubusercontent.com/90457772/220230812-e4d66f9e-ba47-4b25-833d-945ef8908675.png)
 ![image](https://user-images.githubusercontent.com/90457772/220230839-afc76174-ffec-4b21-b115-0aa435ffeb3a.png)
+![image](https://user-images.githubusercontent.com/90457772/220231044-2d7f1a03-736b-4a28-87c6-d74161037803.png)
+![image](https://user-images.githubusercontent.com/90457772/220231081-08352ac6-5fd2-4157-8ef4-481a5767e590.png)
+![image](https://user-images.githubusercontent.com/90457772/220231097-3d73ea3a-6b67-4445-b910-fa4e5352e66f.png)
+![image](https://user-images.githubusercontent.com/90457772/220231186-e1da7c4b-167e-4a12-9979-4d83f4badcf9.png)
 
- 
  
