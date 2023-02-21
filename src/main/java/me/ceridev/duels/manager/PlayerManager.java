@@ -40,6 +40,7 @@ public class PlayerManager {
                     KitType.valueOf(userDetails.getString("preferredArenaType").toUpperCase())
                     ));
         }
+        getDuelPlayer(player).setIsInMatch(false);
     }
 
     public void savePlayerData(Player player) {
@@ -54,7 +55,8 @@ public class PlayerManager {
 
     public void handlePlayerLeave(Player player) {
         savePlayerData(player);
-        players.removeIf(duelsPlayer -> duelsPlayer.getPlayer().getUniqueId().equals(player.getUniqueId()));
+        getDuelPlayer(player).setIsInMatch(false);
+        players.remove(getDuelPlayer(player));
     }
     public DuelsPlayer getDuelPlayer(Player player) {
         for (DuelsPlayer duelsPlayer : players) {

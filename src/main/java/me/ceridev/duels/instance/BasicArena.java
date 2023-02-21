@@ -2,20 +2,22 @@ package me.ceridev.duels.instance;
 
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.Setter;
+import me.ceridev.duels.instance.game.BuildUHCGame;
 import me.ceridev.duels.instance.game.ClassicGame;
+import me.ceridev.duels.instance.game.Countdown;
 import me.ceridev.duels.instance.game.Game;
 import me.ceridev.duels.manager.PlayerManager;
+import me.ceridev.duels.manager.game.BlockManager;
 import me.ceridev.duels.manager.kits.Kit;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Arena {
+public class BasicArena {
 
     private final DuelPlugin plugin;
     private Countdown countdown;
@@ -29,9 +31,10 @@ public class Arena {
     private Location spawnLocationTwo;
     private Location globalSpawnLocation;
     private PlayerManager playerManager;
+    private BlockManager blockManager = null;
     private List<DuelsPlayer> players = new ArrayList<>();
 
-    public Arena(DuelPlugin plugin, PlayerManager playerManager, String arenaName, KitType kitType, Location spawnLocationOne, Location spawnLocationTwo) {
+    public BasicArena(DuelPlugin plugin, PlayerManager playerManager, String arenaName, KitType kitType, Location spawnLocationOne, Location spawnLocationTwo) {
         this.plugin = plugin;
         this.countdown = new Countdown(plugin, this);
         setGameState(GameState.OPEN);
@@ -45,11 +48,15 @@ public class Arena {
         // register new game
         if (kitType == KitType.CLASSIC) {
             this.game = new ClassicGame(plugin, this, spawnLocationOne, spawnLocationTwo, kit);
+        } else if (kitType == KitType.BUILDUHC) {
+            this.game = new BuildUHCGame(plugin, this, spawnLocationOne, spawnLocationTwo, kit);
         }
     }
 
     public void setWinner(DuelsPlayer winner, DuelsPlayer loser) {
-        sendMessage(ChatColor.BLUE + winner.getPlayer().getDisplayName() + " won the match!");
+        gameState = GameState.CLOSING;
+        sendTitle(ChatColor.YELLOW + "VICTORY", ChatColor.GREEN + winner.getPlayer().getDisplayName() + "won the match!");
+        loser.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 200, 1));
         loser.getPlayer().getInventory().clear();
         loser.addDeath(1);
         loser.addLoss(1);
@@ -63,46 +70,58 @@ public class Arena {
     }
 
     public void addPlayer(Player player) {
-        playerManager.getDuelPlayer(player).setIsInMatch(true);
+        if (gameState == GameState.COUNTDOWN && players.size() == 2) {
+            player.sendMessage("Game is in countdown phase but max players is 2...");
+            return;
+        }
+        if (gameState == GameState.RUNNING) {
+            player.sendMessage("Game is running you can't join at this time.");
+            return;
+        }
+        if (gameState == GameState.CLOSING) {
+            player.sendMessage("Game is closing hang tight!");
+            return;
+        }
         player.getInventory().clear();
         if (gameState == GameState.OPEN) {
             player.setGameMode(GameMode.ADVENTURE);
             if (players.isEmpty()) {
                 this.players.add(playerManager.getDuelPlayer(player));
+                playerManager.getDuelPlayer(player).setIsInMatch(true);
                 player.teleport(spawnLocationOne);
             } else {
                 this.players.add(playerManager.getDuelPlayer(player));
+                playerManager.getDuelPlayer(player).setIsInMatch(true);
                 player.teleport(spawnLocationTwo);
                 countdown.start();
             }
-        } else if (gameState == GameState.COUNTDOWN && players.size() == 2) {
-            player.sendMessage("Game is in countdown phase but max players is 2...");
-        } else if (gameState == GameState.RUNNING) {
-            player.sendMessage("Game is running you can't join at this time.");
         }
+        sendMessage(ChatColor.GREEN + player.getDisplayName() + " joined the match! " + ChatColor.YELLOW + players.size() + ChatColor.GRAY + "/" + ChatColor.YELLOW + "2");
     }
 
     public void removePlayer(Player player) {
+        if (gameState == GameState.CLOSING) {
+            players.remove(playerManager.getDuelPlayer(player));
+            sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + player.getDisplayName() + " rage quit lol.");
+            return;
+        }
         if (gameState == GameState.RUNNING) {
             DuelsPlayer loser = playerManager.getDuelPlayer(player);
             players.remove(playerManager.getDuelPlayer(player));
-            if (!players.isEmpty()) {
-                sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "A player has left during the match.");
-                setWinner(players.get(0), loser);
-            } else {
-                reset(false);
-            }
+
+            sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + player.getDisplayName() + " left during the match.");
+            setWinner(players.get(0), loser);
         } else if (gameState == GameState.COUNTDOWN) {
             players.remove(playerManager.getDuelPlayer(player));
             countdown.cancel();
             this.countdown = new Countdown(plugin, this);
-            sendMessage(ChatColor.RED + "Countdown stopped... a player left before the match started...");
+            sendMessage(ChatColor.RED.toString() + ChatColor.ITALIC + "Countdown stopped! A player left before the match started.");
             setGameState(GameState.OPEN);
         } else if (gameState == GameState.OPEN) {
             playerManager.getDuelPlayer(player).setIsInMatch(false);
             player.teleport(globalSpawnLocation);
             plugin.getInventoryItemManager().addLobbyItemsToPlayer(player);
-            players.clear();
+            players.remove(playerManager.getDuelPlayer(player));
         }
     }
 
@@ -115,6 +134,9 @@ public class Arena {
                 duelsPlayer.getPlayer().setHealth(20);
                 if (kickPlayers) {
                     if (duelsPlayer.getPlayer().isDead()) duelsPlayer.getPlayer().spigot().respawn();
+                    duelsPlayer.getPlayer().getActivePotionEffects().forEach(effect -> {
+                        duelsPlayer.getPlayer().removePotionEffect(effect.getType());
+                    });
                     duelsPlayer.getPlayer().teleport(globalSpawnLocation);
                 }
                 duelsPlayer.setIsInMatch(false);
@@ -122,14 +144,16 @@ public class Arena {
             }
         }
 
-        setGameState(GameState.OPEN);
         game.unregister();
         players.clear();
         this.countdown = new Countdown(plugin, this);
 
         if (kitType == KitType.CLASSIC) {
             this.game = new ClassicGame(plugin, this, spawnLocationOne, spawnLocationTwo, kit);
+        } else if (kitType == KitType.BUILDUHC) {
+            this.game = new BuildUHCGame(plugin, this, spawnLocationOne, spawnLocationTwo, kit);
         }
+        setGameState(GameState.OPEN);
     }
 
     public void sendMessage(String message) {
@@ -141,8 +165,15 @@ public class Arena {
     public void sendTitle(String message) {
         for (DuelsPlayer duelsPlayer : players) {
             duelsPlayer.getPlayer().sendTitle(message, "");
+            duelsPlayer.getPlayer().playSound(duelsPlayer.getPlayer().getLocation(), Sound.NOTE_PLING, 100, 100);
         }
     }
+    public void sendTitle(String message, String subtitle) {
+        for (DuelsPlayer duelsPlayer : players) {
+            duelsPlayer.getPlayer().sendTitle(message, subtitle);
+        }
+    }
+
 
     @Getter
     public GameState getGameState() { return gameState; }
@@ -152,6 +183,8 @@ public class Arena {
     public PlayerManager getArenaPlayerManager() { return this.playerManager; }
     @Getter
     public String getArenaName() { return arenaName; }
+    @Getter
+    public KitType getKitType() { return this.kitType; }
     @Setter
     public void setGameState(GameState state) { this.gameState = state; }
 

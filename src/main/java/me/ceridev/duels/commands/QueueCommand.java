@@ -1,5 +1,8 @@
 package me.ceridev.duels.commands;
 
+import me.ceridev.duels.instance.DuelPlugin;
+import me.ceridev.duels.instance.KitType;
+import me.ceridev.duels.inventory.menus.QueueMenu;
 import me.ceridev.duels.manager.queue.QueueManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -8,8 +11,11 @@ import org.bukkit.entity.Player;
 
 public class QueueCommand implements CommandExecutor {
     private QueueManager queueManager;
-    public QueueCommand(QueueManager queueManager) {
+    private DuelPlugin plugin;
+    public QueueCommand(DuelPlugin plugin, QueueManager queueManager) {
+
         this.queueManager = queueManager;
+        this.plugin = plugin;
     }
 
     @Override
@@ -20,7 +26,8 @@ public class QueueCommand implements CommandExecutor {
         }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("jq")) {
-            queueManager.addPlayerToQueue(player);
+           QueueMenu qm = new QueueMenu(plugin, plugin.getPlayerManager());
+           qm.openQueueMenu(player);
         }
 
         return false;

@@ -73,7 +73,7 @@ public class DuelsPlayer {
                 playersInQueue = board.registerNewTeam("queueteam");
                 playersInQueue.addEntry(ChatColor.BLUE.toString());
                 playersInQueue.setPrefix(ChatColor.GRAY.toString() + ChatColor.BOLD + "  Queue: ");
-                playersInQueue.setSuffix(ChatColor.WHITE + String.valueOf(plugin.getQueueManager().getClassicQueue().size()));
+                playersInQueue.setSuffix(ChatColor.WHITE + String.valueOf(plugin.getQueueManager().getQueue().size()));
                 obj.getScore(ChatColor.BLUE.toString()).setScore(3);
 
                 playerStats = board.registerNewTeam("playerstats");
@@ -82,7 +82,7 @@ public class DuelsPlayer {
                 playerStats.setSuffix(ChatColor.WHITE + String.valueOf(plugin.getMongoManager().getDuelUsersDetails(player).getEmbedded(Arrays.asList("stats", "totalKills"), Integer.class)));
                 obj.getScore(ChatColor.GOLD.toString()).setScore(4);
             } else {
-                playersInQueue.setSuffix(ChatColor.WHITE + String.valueOf(plugin.getQueueManager().getClassicQueue().size()));
+                playersInQueue.setSuffix(ChatColor.WHITE + String.valueOf(plugin.getQueueManager().getQueue().size()));
                 playerStats.setSuffix(ChatColor.WHITE + " " + totalKills);
             }
         }

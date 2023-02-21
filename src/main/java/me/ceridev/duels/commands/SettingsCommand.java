@@ -1,7 +1,7 @@
 package me.ceridev.duels.commands;
 
 import me.ceridev.duels.instance.DuelPlugin;
-import me.ceridev.duels.inventory.menus.PlayerSettings;
+import me.ceridev.duels.inventory.menus.PlayerSettingsMenu;
 import me.ceridev.duels.manager.PlayerManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -25,7 +25,7 @@ public class SettingsCommand implements CommandExecutor {
         }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("settings")) {
-            PlayerSettings ps = new PlayerSettings(plugin, playerManager);
+            PlayerSettingsMenu ps = new PlayerSettingsMenu(plugin, playerManager);
             ps.openPlayerSettingsInv(player);
             return true;
         }

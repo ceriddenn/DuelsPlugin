@@ -13,7 +13,6 @@ import me.ceridev.duels.manager.ArenaManager;
 import me.ceridev.duels.manager.MongoManager;
 import me.ceridev.duels.manager.PlayerManager;
 import me.ceridev.duels.manager.kits.KitManager;
-import me.ceridev.duels.manager.scoreboard.ScoreboardManager;
 import me.ceridev.duels.manager.queue.QueueManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,7 +24,6 @@ public final class DuelPlugin extends JavaPlugin {
     private ArenaManager arenaManager;
     private PlayerManager playerManager;
     private QueueManager queueManager;
-    private ScoreboardManager scoreboardManager;
     private KitManager kitManager;
     private InventoryItemManager inventoryItemManager;
 
@@ -44,14 +42,13 @@ public final class DuelPlugin extends JavaPlugin {
         kitManager.populateKits();
         this.arenaManager = new ArenaManager(this, mongoManager, playerManager);
         this.queueManager = new QueueManager(this, playerManager, arenaManager);
-        this.scoreboardManager = new ScoreboardManager(this, playerManager, mongoManager);
         this.inventoryItemManager = new InventoryItemManager(this, playerManager, queueManager);
 
-        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, playerManager, scoreboardManager, inventoryItemManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, playerManager, inventoryItemManager), this);
         getServer().getPluginManager().registerEvents(new PlayerLeaveEvent(playerManager, arenaManager, queueManager), this);
 
         getCommand("join").setExecutor(new JoinCommand(arenaManager));
-        getCommand("jq").setExecutor(new QueueCommand(queueManager));
+        getCommand("jq").setExecutor(new QueueCommand(this, queueManager));
         getCommand("settings").setExecutor(new SettingsCommand(this, playerManager));
     }
 
@@ -59,15 +56,12 @@ public final class DuelPlugin extends JavaPlugin {
     public void onDisable() {
         // Plugin shutdown logic
         inventoryItemManager.unregisterItemEvents();
-        scoreboardManager.unregisterTask();
         // save mongodb duelplugin instances
         mongoAdapter.closeAdapter();
     }
     @Getter
     public MongoAdapter getMongoAdapter() { return this.mongoAdapter; }
 
-    @Getter
-    public ScoreboardManager getScoreboardManager() { return this.scoreboardManager; }
 
     @Getter
     public KitManager getKitManager() { return this.kitManager; }

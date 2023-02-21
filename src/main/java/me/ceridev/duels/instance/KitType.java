@@ -2,5 +2,9 @@ package me.ceridev.duels.instance;
 
 public enum KitType {
     CLASSIC,
-    POTPVP
+    POTPVP,
+    BUILDUHC,
+    GAPPLE,
+    BRIDGES
+
 }

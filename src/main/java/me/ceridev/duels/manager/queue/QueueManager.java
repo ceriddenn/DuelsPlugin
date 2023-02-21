@@ -1,22 +1,19 @@
 package me.ceridev.duels.manager.queue;
 
 import jdk.nashorn.internal.objects.annotations.Getter;
-import me.ceridev.duels.instance.Arena;
-import me.ceridev.duels.instance.DuelPlugin;
-import me.ceridev.duels.instance.DuelsPlayer;
+import me.ceridev.duels.instance.*;
+import me.ceridev.duels.instance.bridges.BridgeArena;
 import me.ceridev.duels.manager.ArenaManager;
 import me.ceridev.duels.manager.PlayerManager;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class QueueManager {
 
-    private List<DuelsPlayer> classicQueue = new ArrayList<>();
+    private Map<DuelsPlayer, KitType> queue = new HashMap<>();
     private final PlayerManager playerManager;
     private final ArenaManager arenaManager;
     private final DuelPlugin plugin;
@@ -28,38 +25,67 @@ public class QueueManager {
         this.queueTask = new QueueTask(plugin, this, arenaManager);
     }
 
-    public void addPlayerToQueue(Player player) {
-        if (classicQueue.contains(playerManager.getDuelPlayer(player))) return;
-        classicQueue.add(playerManager.getDuelPlayer(player));
-        player.sendMessage("You have been added to the queue!");
-        queueTask.run();
+    public void addPlayerToQueue(Player player, KitType kitType) {
+        if (queue.containsKey(playerManager.getDuelPlayer(player))) {
+            player.sendMessage(ChatColor.RED + "You are already in " + ChatColor.AQUA + queue.get(playerManager.getDuelPlayer(player)) + ChatColor.RED + " queue");
+            return;
+        }
+        queue.put(playerManager.getDuelPlayer(player), kitType);
+        player.sendMessage(ChatColor.GREEN.toString() + ChatColor.BOLD + "Added you to the " + ChatColor.AQUA + kitType.toString().toLowerCase() + ChatColor.GREEN + ChatColor.BOLD + " queue!");
+        plugin.getInventoryItemManager().addQueueItemsToPlayer(player);
+        if (queue.isEmpty()) {
+            queueTask.run();
+        }
     }
 
     public void removePlayerFromQueue(Player player) {
-        if (!classicQueue.contains(playerManager.getDuelPlayer(player))) return;
-        classicQueue.remove(playerManager.getDuelPlayer(player));
+        if (!queue.containsKey(playerManager.getDuelPlayer(player))) return;
+        queue.remove(playerManager.getDuelPlayer(player));
+        plugin.getInventoryItemManager().addLobbyItemsToPlayer(player);
     }
 
     @Getter
-    public List<DuelsPlayer> getClassicQueue() { return classicQueue; }
+    public Map<DuelsPlayer, KitType> getQueue() { return queue; }
 
     public void execute(DuelsPlayer matchedPlayerOne, DuelsPlayer matchedPlayerTwo) {
-        for (Arena arena : arenaManager.getArenas()) {
-            if (arena.getPlayers().isEmpty()) {
-                arena.addPlayer(matchedPlayerOne.getPlayer());
-                arena.addPlayer(matchedPlayerTwo.getPlayer());
+        for (BasicArena basicArena : arenaManager.getArenas()) {
+            if (basicArena.getPlayers().isEmpty()) {
+                if (basicArena.getGameState().equals(GameState.RUNNING) || basicArena.getGameState().equals(GameState.COUNTDOWN)) return;
+                basicArena.addPlayer(matchedPlayerOne.getPlayer());
+                basicArena.addPlayer(matchedPlayerTwo.getPlayer());
             }
         }
-        classicQueue.remove(matchedPlayerOne);
-        classicQueue.remove(matchedPlayerTwo);
+        queue.remove(matchedPlayerOne);
+        queue.remove(matchedPlayerTwo);
+    }
+
+    public void executeBridge(DuelsPlayer matchedPlayerOne, DuelsPlayer matchedPlayerTwo) {
+        for (BridgeArena bridgeArena : arenaManager.getBridgeArenas()) {
+            if (bridgeArena.getPlayers().isEmpty()) {
+                if (bridgeArena.getGameState().equals(GameState.RUNNING) || bridgeArena.getGameState().equals(GameState.COUNTDOWN)) return;
+                bridgeArena.addPlayer(matchedPlayerOne.getPlayer());
+                bridgeArena.addPlayer(matchedPlayerTwo.getPlayer());
+            }
+        }
+        queue.remove(matchedPlayerOne);
+        queue.remove(matchedPlayerTwo);
+    }
+
+    public void executeBridge(DuelsPlayer player) {
+        for (BridgeArena bridgeArena : arenaManager.getBridgeArenas()) {
+            if (bridgeArena.getPlayers().size() == 1) {
+                bridgeArena.addPlayer(player.getPlayer());
+            }
+        }
+        queue.remove(player);
     }
 
     public void execute(DuelsPlayer player) {
-        for (Arena arena : arenaManager.getArenas()) {
-            if (arena.getPlayers().size() == 1) {
-                arena.addPlayer(player.getPlayer());
+        for (BasicArena basicArena : arenaManager.getArenas()) {
+            if (basicArena.getPlayers().size() == 1) {
+                basicArena.addPlayer(player.getPlayer());
             }
         }
-        classicQueue.remove(player);
+        queue.remove(player);
     }
 }

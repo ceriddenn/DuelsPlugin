@@ -8,30 +8,38 @@ import org.bukkit.event.Listener;
 public abstract class Game implements Listener {
 
     protected DuelPlugin plugin;
-    protected Arena arena;
+    protected BasicArena basicArena;
 
     protected ArenaCleanup arenaCleanup;
 
-    public Game(DuelPlugin plugin, Arena arena) {
+    public Game(DuelPlugin plugin, BasicArena basicArena) {
         this.plugin = plugin;
-        this.arena = arena;
-        this.arenaCleanup = new ArenaCleanup(plugin, arena);
+        this.basicArena = basicArena;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     public void start() {
-        arena.setGameState(GameState.RUNNING);
+        basicArena.setGameState(GameState.RUNNING);
         onStart();
     }
 
     public void startArenaCleanup() {
+        this.arenaCleanup = new ArenaCleanup(plugin, basicArena);
+        arenaCleanup.start();
+    }
+
+    public void newCleanup(BasicArena basicArena) {
+        arenaCleanup.cancel();
+        this.arenaCleanup = new ArenaCleanup(plugin, basicArena);
         arenaCleanup.start();
     }
 
     public void unregister() {
         HandlerList.unregisterAll(this);
-        arenaCleanup.cancel();
-        this.arenaCleanup = new ArenaCleanup(plugin, arena);
+        if (basicArena.getGameState() == GameState.CLOSING) {
+            arenaCleanup.cancel();
+        }
+        this.arenaCleanup = new ArenaCleanup(plugin, basicArena);
     }
 
     public abstract void onStart();

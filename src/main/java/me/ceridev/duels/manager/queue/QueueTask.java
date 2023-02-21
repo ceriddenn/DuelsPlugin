@@ -1,8 +1,7 @@
 package me.ceridev.duels.manager.queue;
 
-import me.ceridev.duels.instance.Arena;
-import me.ceridev.duels.instance.DuelPlugin;
-import me.ceridev.duels.instance.DuelsPlayer;
+import me.ceridev.duels.instance.*;
+import me.ceridev.duels.instance.bridges.BridgeArena;
 import me.ceridev.duels.manager.ArenaManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -19,32 +18,83 @@ public class QueueTask extends BukkitRunnable {
 
     @Override
     public void run() {
-            if (queueManager.getClassicQueue().size() == 1) {
-                DuelsPlayer matchedPlayerOne = queueManager.getClassicQueue().get(0);
-                for (Arena arena : arenaManager.getArenas()) {
-                    if (arena.getPlayers().size() == 1) {
-                        // add preventative measure to ensure a player already in an arena cannot join queue.
-                        if (matchedPlayerOne.isInMatch()) return;
-                        queueManager.execute(matchedPlayerOne);
+        Random generator = new Random();
+        Object[] keys = queueManager.getQueue().keySet().toArray();
+            if (queueManager.getQueue().size() == 1) {
+                DuelsPlayer matchedPlayerOne = (DuelsPlayer) keys[generator.nextInt(keys.length)];
+                if (queueManager.getQueue().get(matchedPlayerOne) == KitType.BRIDGES) {
+                    for (BridgeArena bridgeArena : arenaManager.getBridgeArenas()) {
+                        if (bridgeArena.getKitType() != queueManager.getQueue().get(matchedPlayerOne)) return;
+                        if (bridgeArena.getPlayers().size() == 1) {
+                            // add preventative measure to ensure a player already in an arena cannot join queue.
+                            if (matchedPlayerOne.isInMatch()) return;
+                            queueManager.executeBridge(matchedPlayerOne);
+                            System.out.println("RAN1");
+                        }
                     }
-                }
-            } else if (queueManager.getClassicQueue().size() > 1){
-                DuelsPlayer matchedPlayerOne = queueManager.getClassicQueue().get(new Random().nextInt(queueManager.getClassicQueue().size()));
-                DuelsPlayer matchedPlayerTwo = queueManager.getClassicQueue().get(new Random().nextInt(queueManager.getClassicQueue().size()));
-                if (matchedPlayerOne.getPlayer().getDisplayName().equalsIgnoreCase(matchedPlayerTwo.getPlayer().getDisplayName())) return;
-                for (Arena arena : arenaManager.getArenas()) {
-                    if (arena.getPlayers().isEmpty()){
-                        if (matchedPlayerOne.isInMatch()) return;
-                        if (matchedPlayerTwo.isInMatch()) return;
-                        queueManager.execute(matchedPlayerOne, matchedPlayerTwo);
-                    }
-                    if (arena.getPlayers().size() == 1) {
-                        if (arena.getPlayers().contains(matchedPlayerOne)) {
-                            if (matchedPlayerTwo.isInMatch()) return;
-                            queueManager.execute(matchedPlayerTwo);
-                        } else if (arena.getPlayers().contains(matchedPlayerTwo)) {
+                } else {
+                    for (BasicArena basicArena : arenaManager.getArenas()) {
+                        if (basicArena.getKitType() != queueManager.getQueue().get(matchedPlayerOne)) return;
+                        if (basicArena.getPlayers().size() == 1) {
+                            // add preventative measure to ensure a player already in an arena cannot join queue.
                             if (matchedPlayerOne.isInMatch()) return;
                             queueManager.execute(matchedPlayerOne);
+                        }
+                    }
+                }
+            } else if (queueManager.getQueue().size() > 1){
+                DuelsPlayer mPOne = null;
+                DuelsPlayer mpTwo = null;
+                DuelsPlayer matchedPlayerOne = (DuelsPlayer) keys[generator.nextInt(keys.length)];
+                DuelsPlayer matchedPlayerTwo = (DuelsPlayer) keys[generator.nextInt(keys.length)];
+                // check if both players kit queue type is the same
+                if (!queueManager.getQueue().get(matchedPlayerOne).equals(queueManager.getQueue().get(matchedPlayerTwo))) {
+                    return;
+                }
+                if (matchedPlayerOne.getPlayer().getDisplayName().equalsIgnoreCase(matchedPlayerTwo.getPlayer().getDisplayName())) return;
+                if (queueManager.getQueue().get(matchedPlayerOne) == KitType.BRIDGES) {
+                    for (BridgeArena bridgeArena : arenaManager.getBridgeArenas()) {
+                        if (bridgeArena.getKitType() != queueManager.getQueue().get(matchedPlayerOne)) return;
+                        ;
+                        if (bridgeArena.getKitType() != queueManager.getQueue().get(matchedPlayerTwo)) return;
+                        ;
+                        if (bridgeArena.getPlayers().isEmpty()) {
+                            if (matchedPlayerOne.isInMatch()) return;
+                            if (matchedPlayerTwo.isInMatch()) return;
+                            queueManager.executeBridge(matchedPlayerOne, matchedPlayerTwo);
+                            System.out.println("RAN2");
+                        }
+                        if (bridgeArena.getPlayers().size() == 1) {
+                            if (bridgeArena.getPlayers().contains(matchedPlayerOne)) {
+                                if (matchedPlayerTwo.isInMatch()) return;
+                                queueManager.executeBridge(matchedPlayerTwo);
+                                System.out.println("RAN3");
+                            } else if (bridgeArena.getPlayers().contains(matchedPlayerTwo)) {
+                                if (matchedPlayerOne.isInMatch()) return;
+                                queueManager.executeBridge(matchedPlayerOne);
+                                System.out.println("RAN4");
+                            }
+                        }
+                    }
+                } else {
+                    for (BasicArena basicArena : arenaManager.getArenas()) {
+                        if (basicArena.getKitType() != queueManager.getQueue().get(matchedPlayerOne)) return;
+                        ;
+                        if (basicArena.getKitType() != queueManager.getQueue().get(matchedPlayerTwo)) return;
+                        ;
+                        if (basicArena.getPlayers().isEmpty()) {
+                            if (matchedPlayerOne.isInMatch()) return;
+                            if (matchedPlayerTwo.isInMatch()) return;
+                            queueManager.execute(matchedPlayerOne, matchedPlayerTwo);
+                        }
+                        if (basicArena.getPlayers().size() == 1) {
+                            if (basicArena.getPlayers().contains(matchedPlayerOne)) {
+                                if (matchedPlayerTwo.isInMatch()) return;
+                                queueManager.execute(matchedPlayerTwo);
+                            } else if (basicArena.getPlayers().contains(matchedPlayerTwo)) {
+                                if (matchedPlayerOne.isInMatch()) return;
+                                queueManager.execute(matchedPlayerOne);
+                            }
                         }
                     }
                 }

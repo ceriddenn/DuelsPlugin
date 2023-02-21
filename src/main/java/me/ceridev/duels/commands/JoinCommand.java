@@ -22,7 +22,7 @@ public class JoinCommand implements CommandExecutor {
         }
         Player player = (Player) sender;
         if (command.getName().equalsIgnoreCase("join")) {
-            arenaManager.getArena("lotus").addPlayer(player);
+            arenaManager.getBridgeArena("backrooms").addPlayer(player);
         }
         return false;
     }

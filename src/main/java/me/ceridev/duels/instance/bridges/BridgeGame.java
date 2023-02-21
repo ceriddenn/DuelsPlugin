@@ -1,6 +1,8 @@
-package me.ceridev.duels.instance.game;
+package me.ceridev.duels.instance.bridges;
 
-import me.ceridev.duels.instance.*;
+import me.ceridev.duels.instance.DuelPlugin;
+import me.ceridev.duels.instance.DuelsPlayer;
+import me.ceridev.duels.instance.GameState;
 import me.ceridev.duels.manager.PlayerManager;
 import me.ceridev.duels.manager.kits.Kit;
 import org.bukkit.GameMode;
@@ -12,27 +14,23 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 
-public class ClassicGame extends Game {
-
-    private DuelPlugin plugin;
-    private final Location spawnLocationOne;
-    private final Location spawnLocationTwo;
-
-    private final Kit kit;
-
-    public ClassicGame(DuelPlugin plugin, BasicArena basicArena, Location spawnLocationOne, Location spawnLocationTwo, Kit kit) {
-        super(plugin, basicArena);
-        this.plugin = plugin;
+public class BridgeGame extends SpecialGame {
+    private Kit kit;
+    private BridgeArena bridgeArena;
+    private Location spawnLocationOne;
+    private Location spawnLocationTwo;
+    public BridgeGame(DuelPlugin plugin, BridgeArena bridgeArena, Kit kit, Location spawnLocationOne, Location spawnLocationTwo) {
+        super(plugin, bridgeArena);
+        this.bridgeArena = bridgeArena;
+        this.kit = kit;
         this.spawnLocationOne = spawnLocationOne;
         this.spawnLocationTwo = spawnLocationTwo;
-        this.kit = kit;
     }
 
     @Override
     public void onStart() {
-        // tp players
-        DuelsPlayer playerOne = basicArena.getPlayers().get(0);
-        DuelsPlayer playerTwo = basicArena.getPlayers().get(1);
+        DuelsPlayer playerOne = bridgeArena.getPlayers().get(0);
+        DuelsPlayer playerTwo = bridgeArena.getPlayers().get(1);
 
         playerOne.getPlayer().teleport(spawnLocationOne);
         playerOne.getPlayer().setGameMode(GameMode.SURVIVAL);
@@ -41,16 +39,15 @@ public class ClassicGame extends Game {
         playerTwo.getPlayer().setGameMode(GameMode.SURVIVAL);
         kit.addKitToInventory(playerOne);
         kit.addKitToInventory(playerTwo);
-        basicArena.sendMessage("Game has started! First to kill the other wins!");
+        bridgeArena.sendMessage("Game has started! First to kill the other wins!");
     }
-
-
+    // add void checking event
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
         if (!(event.getDamager() instanceof Player)) return;
-        if (basicArena.getGameState() == GameState.OPEN || basicArena.getGameState() == GameState.COUNTDOWN || basicArena.getGameState() == GameState.RUNNING || basicArena.getGameState() == GameState.CLOSING) {
-            for (DuelsPlayer duelsPlayer : basicArena.getPlayers()) {
+        if (bridgeArena.getGameState() == GameState.OPEN || bridgeArena.getGameState() == GameState.COUNTDOWN || bridgeArena.getGameState() == GameState.RUNNING || bridgeArena.getGameState() == GameState.CLOSING) {
+            for (DuelsPlayer duelsPlayer : bridgeArena.getPlayers()) {
                 if (duelsPlayer.getPlayer().getGameMode() == GameMode.ADVENTURE) {
                     event.setCancelled(true);
                 }
@@ -58,11 +55,17 @@ public class ClassicGame extends Game {
         }
         Player playerWhoDiedKiller = (Player) event.getDamager();
         Player playerWhoDied = (Player) event.getEntity();
-        PlayerManager aPM = basicArena.getArenaPlayerManager();
-        if (basicArena.getPlayers().contains(aPM.getDuelPlayer(playerWhoDied)) && basicArena.getPlayers().contains(aPM.getDuelPlayer(playerWhoDiedKiller)) && basicArena.getGameState() == GameState.RUNNING) {
+        PlayerManager aPM = bridgeArena.getArenaPlayerManager();
+        if (bridgeArena.getPlayers().contains(aPM.getDuelPlayer(playerWhoDied)) && bridgeArena.getPlayers().contains(aPM.getDuelPlayer(playerWhoDiedKiller)) && bridgeArena.getGameState() == GameState.RUNNING) {
             if (playerWhoDied.getHealth() <= event.getFinalDamage()) {
                 playerWhoDied.setHealth(20);
-                basicArena.setWinner(aPM.getDuelPlayer(playerWhoDiedKiller), aPM.getDuelPlayer(playerWhoDied));
+                int pIndex;
+                pIndex = bridgeArena.getPlayers().indexOf(aPM.getDuelPlayer(playerWhoDied));
+                if (pIndex == 0) {
+                    playerWhoDied.teleport(bridgeArena.getSpawn1());
+                } else {
+                    playerWhoDied.teleport(bridgeArena.getSpawn2());
+                }
             }
         }
     }
@@ -85,10 +88,8 @@ public class ClassicGame extends Game {
     @EventHandler
     public void itemDropEvent(PlayerDropItemEvent event) {
         if (!plugin.getPlayerManager().getDuelPlayer(event.getPlayer()).isInMatch()) return;
-        if (this.basicArena.getPlayers().contains(plugin.getPlayerManager().getDuelPlayer(event.getPlayer()))) {
+        if (this.bridgeArena.getPlayers().contains(plugin.getPlayerManager().getDuelPlayer(event.getPlayer()))) {
             event.setCancelled(true);
         }
     }
-
 }
-

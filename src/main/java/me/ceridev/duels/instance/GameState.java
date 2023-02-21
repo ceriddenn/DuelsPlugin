@@ -1,7 +1,8 @@
 package me.ceridev.duels.instance;
 
 public enum GameState {
-    RUNNING,
+    OPEN,
     COUNTDOWN,
-    OPEN
+    RUNNING,
+    CLOSING
 }

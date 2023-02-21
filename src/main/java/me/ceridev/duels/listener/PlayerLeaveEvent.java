@@ -1,6 +1,7 @@
 package me.ceridev.duels.listener;
 
-import me.ceridev.duels.instance.Arena;
+import me.ceridev.duels.instance.BasicArena;
+import me.ceridev.duels.instance.bridges.BridgeArena;
 import me.ceridev.duels.manager.ArenaManager;
 import me.ceridev.duels.manager.PlayerManager;
 import me.ceridev.duels.manager.queue.QueueManager;
@@ -21,11 +22,25 @@ public class PlayerLeaveEvent implements Listener {
 
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
-        for (Arena arena : arenaManager.getArenas()) {
-            if (arena.getPlayers().contains(playerManager.getDuelPlayer(event.getPlayer()))) {
-                arena.removePlayer(event.getPlayer());
+        if (arenaManager.isPlayerInBridgeArena(event.getPlayer())) {
+            for (BridgeArena bridgeArena : arenaManager.getBridgeArenas()) {
+                if (bridgeArena.getPlayers().contains(playerManager.getDuelPlayer(event.getPlayer()))) {
+                    bridgeArena.removePlayer(event.getPlayer());
+                }
+            }
+        } else {
+            for (BasicArena basicArena : arenaManager.getArenas()) {
+                if (basicArena.getPlayers().contains(playerManager.getDuelPlayer(event.getPlayer()))) {
+                    basicArena.removePlayer(event.getPlayer());
+                }
             }
         }
+        if (playerManager.getDuelPlayer(event.getPlayer()).isInMatch()) {
+            playerManager.getDuelPlayer(event.getPlayer()).setIsInMatch(false);
+        }
+        event.getPlayer().getActivePotionEffects().forEach(effect -> {
+            event.getPlayer().removePotionEffect(effect.getType());
+        });
         playerManager.handlePlayerLeave(event.getPlayer());
         queueManager.removePlayerFromQueue(event.getPlayer());
     }

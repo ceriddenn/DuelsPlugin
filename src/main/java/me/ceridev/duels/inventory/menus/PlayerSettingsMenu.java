@@ -11,10 +11,10 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public class PlayerSettings {
+public class PlayerSettingsMenu {
     private final DuelPlugin plugin;
     private final PlayerManager playerManager;
-    public PlayerSettings(DuelPlugin plugin, PlayerManager playerManager) {
+    public PlayerSettingsMenu(DuelPlugin plugin, PlayerManager playerManager) {
         this.plugin = plugin;
         this.playerManager = playerManager;
     }
