@@ -29,4 +29,6 @@ This plugin also features multiple intelligent systems which include...
  
  My main focus right now is to get all of the main game mechanics finished, sort out all bugs, then pretty it up and add final features ie more guis better efficiency and functionality.
  
+ **I am 1-2 months into learning java and spigot api so I apologize if this code is messy, un-optimized, or doesn't run efficiently. Please contact me on discord or via email above if you want to help me or give me some pointers on this project. I am always open for help. In the future I will setup this repo for prs and bug reporting.**
+ 
  
