@@ -31,4 +31,8 @@ This plugin also features multiple intelligent systems which include...
  
  **I am 1-2 months into learning java and spigot api so I apologize if this code is messy, un-optimized, or doesn't run efficiently. Please contact me on discord or via email above if you want to help me or give me some pointers on this project. I am always open for help. In the future I will setup this repo for prs and bug reporting.**
  
+ ![image](https://user-images.githubusercontent.com/90457772/220230812-e4d66f9e-ba47-4b25-833d-945ef8908675.png)
+![image](https://user-images.githubusercontent.com/90457772/220230839-afc76174-ffec-4b21-b115-0aa435ffeb3a.png)
+
+ 
  
